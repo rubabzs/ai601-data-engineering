@@ -25,6 +25,7 @@ def save_to_csv(data, filename):
             daily_data.append(data["hourly"][header])
         daily_data = zip(*daily_data)
         data_writer.writerows(daily_data)
+        
         return None
 
 ### Part 3. Cleaning Operation (Transform)
