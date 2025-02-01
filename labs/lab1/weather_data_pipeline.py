@@ -1,7 +1,8 @@
 import requests
 import csv
 
-URL = ""
+URL = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&past_days=10&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
+
 
 ### Part 1. Read Operation (Extract)
 def fetch_weather_data():
@@ -9,33 +10,57 @@ def fetch_weather_data():
     response = requests.get(URL)
 
     ## TODO: complete the code, the output should be data in json format
+    if response.status_code == 200:
+        data = response.json()
+    return data
 
 
 ### Part 2. Write Operation (Load)
 def save_to_csv(data, filename):
     """Saves weather data to a CSV file."""
-    with open(filename, "<ENTER MODE HERE>", newline='', encoding='utf-8') as file:
+    with open(filename, "w", newline="", encoding="utf-8") as file:
 
         ### TODO: complete rest of the code, HINT: write the header row and body separately
+        writer = csv.writer(file)
+        columns = data["hourly"].keys()
+        rows = []
+        writer.writerow(columns)
 
-        return None
+        (time, temperature_2m, relative_humidity_2m, wind_speed_10m) = (
+            data["hourly"]["time"],
+            data["hourly"]["temperature_2m"],
+            data["hourly"]["relative_humidity_2m"],
+            data["hourly"]["wind_speed_10m"],
+        )
+
+        for i in range(len(time)):
+            d = [time[i], temperature_2m[i], relative_humidity_2m[i], wind_speed_10m[i]]
+            rows.append(d)
+
+        writer.writerows(rows)
+        file.close()
+    return
+
 
 ### Part 3. Cleaning Operation (Transform)
 def clean_data(input_file, output_file):
-    """ clean the data based on the following rules:
-        1. Temperature should be between 0 and 60°C
-        2. Humidity should be between 0% and 80%
-        3. Wind speed in a betweeen 3 and 150
+    """clean the data based on the following rules:
+    1. Temperature should be between 0 and 60°C
+    2. Humidity should be between 0% and 80%
+    3. Wind speed in a betweeen 3 and 150
     """
 
     ### TODO: complete rest of the code
-            
-    print("Cleaned data saved to", output_file)
 
-### Part 4. Aggregation Operation 
+    print("Cleaned data saved to", output_file)
+    with open(input_file, "w", newline="", encoding="utf-8") as file:
+        pass
+
+
+### Part 4. Aggregation Operation
 def summarize_data(filename):
     """Summarizes weather data including averages and extremes."""
-    with open(filename, 'r', encoding='utf-8') as file:
+    with open(filename, "r", encoding="utf-8") as file:
         reader = csv.reader(file)
         headers = next(reader)  # Read header row
         data = list(reader)  # Convert CSV data to list
@@ -68,8 +93,6 @@ if __name__ == "__main__":
     if weather_data:
         save_to_csv(weather_data, "weather_data.csv")
         print("Weather data saved to weather_data.csv")
-        #clean_data("weather_data.csv", "cleaned_data.csv")
-        #print("Weather data clean saved to cleaned_data.csv")
-        #summarize_data("cleaned_data.csv")
-        
-
+        # clean_data("weather_data.csv", "cleaned_data.csv")
+        # print("Weather data clean saved to cleaned_data.csv")
+        # summarize_data("cleaned_data.csv")
