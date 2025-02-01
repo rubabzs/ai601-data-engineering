@@ -1,23 +1,43 @@
 import requests
 import csv
 
-URL = ""
+URL = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&past_days=10&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
 
+# timestamp, temperature, windspeed, humidity = []
+temperature = []
 ### Part 1. Read Operation (Extract)
 def fetch_weather_data():
+    global temperature
     """Fetches weather data for the past 10 days."""
     response = requests.get(URL)
+    data = response.json()
+    print(data)
+    latitude = data["latitude"]
+    print(latitude)
+    hourly = data["hourly"]
+    temperature = hourly["temperature_2m"]
+    print(temperature)
+
+    return data
+
+    
 
     ## TODO: complete the code, the output should be data in json format
 
 
 ### Part 2. Write Operation (Load)
 def save_to_csv(data, filename):
+    global temperature
     """Saves weather data to a CSV file."""
-    with open(filename, "<ENTER MODE HERE>", newline='', encoding='utf-8') as file:
-
+    with open(filename, "w", newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        print("Daniyal the greay")
         ### TODO: complete rest of the code, HINT: write the header row and body separately
-
+        writer.writerow("temperatures")
+        for i in range(len(temperature)):
+            print(f"temperature: {temperature[i]}")
+            fl = float(temperature[i])
+            writer.writerow([fl])
         return None
 
 ### Part 3. Cleaning Operation (Transform)
