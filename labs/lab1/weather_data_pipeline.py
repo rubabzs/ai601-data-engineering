@@ -32,6 +32,10 @@ def clean_data(input_file, output_file):
             
     print("Cleaned data saved to", output_file)
 
+
+
+def add(a,b):
+    return a+b
 ### Part 4. Aggregation Operation 
 def summarize_data(filename):
     """Summarizes weather data including averages and extremes."""
