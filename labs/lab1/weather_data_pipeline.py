@@ -30,7 +30,7 @@ def clean_data(input_file, output_file):
 
     ### TODO: complete rest of the code
             
-    print("Cleaned data saved to", output_file)
+    print("Cleaned data saved", output_file)
 
 
 
