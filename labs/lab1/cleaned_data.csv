@@ -1,4 +1,4 @@
-Time,Temperature (°C),Humidity (%),Wind Speed (m/s)
+Time,Temperature ('C),Humidity (%),Wind Speed (m/s)
 2025-01-23T22:00,3.5,80.0,11.2
 2025-01-23T23:00,3.2,80.0,9.8
 2025-01-24T10:00,5.0,79.0,14.3

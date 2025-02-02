@@ -106,5 +106,5 @@ if __name__ == "__main__":
         print("Weather data saved to weather_data.csv")
         clean_data("weather_data.csv", "cleaned_data.csv")
         print("Weather data clean saved to cleaned_data.csv")
-        #summarize_data("cleaned_data.csv")
+        summarize_data("cleaned_data.csv")
         
