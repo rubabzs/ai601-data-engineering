@@ -48,13 +48,27 @@ def clean_data(input_file, output_file):
         2. Humidity should be between 0% and 80%
         3. Wind speed in a betweeen 3 and 150
     """
-    with open(input_file, mode ='r')as file:
-        csvFile = csv.reader(file)
+    with open(input_file, mode = 'r') as input_file, open(output_file, mode='w', newline='') as output_file:
+        reader = csv.reader(input_file)
+        writer = csv.writer(output_file)
         
-
-
-    ### TODO: complete rest of the code
+        # Read and write header
+        headers = next(reader)
+        writer.writerow(headers)
+        
+        # Filter and write valid rows
+        for row in reader:
+            time, temp, humidity, wind_speed = row
             
+            try:
+                temp = float(temp)
+                humidity = float(humidity)
+                wind_speed = float(wind_speed)
+                
+                if 0 <= temp <= 60 and 0 <= humidity <= 80 and 3 <= wind_speed <= 150:
+                    writer.writerow([time, temp, humidity, wind_speed])
+            except ValueError:
+                continue  # Skip rows with invalid data
     print("Cleaned data saved to", output_file)
 
 ### Part 4. Aggregation Operation 
@@ -74,6 +88,15 @@ def summarize_data(filename):
         temperatures = [float(row[1]) for row in data if row[1]]
         humidity_values = [float(row[2]) for row in data if row[2]]
         wind_speeds = [float(row[3]) for row in data if row[3]]
+        print(len(temperatures))
+        print(len(humidity_values))
+
+        total_records= len(temperatures)
+        avg_temp= sum(temperatures)/len(temperatures)
+        max_temp=max(temperatures)
+        min_temp= min(temperatures)
+        avg_humidity=sum(humidity_values)/len(humidity_values)
+        avg_wind_speed=sum(wind_speeds)/len(wind_speeds)
 
         # Compute statistics
         ### TODO: complete rest of the code by computing the below mentioned metrics
@@ -94,8 +117,9 @@ if __name__ == "__main__":
     if weather_data:
         save_to_csv(weather_data, "weather_data.csv") #getting data-> json and  saving into weather_data
         print("Weather data saved to weather_data.csv")
-        #clean_data("weather_data.csv", "cleaned_data.csv")
-        #print("Weather data clean saved to cleaned_data.csv")
-        #summarize_data("cleaned_data.csv")
+        clean_data("weather_data.csv", "cleaned_data.csv")
+        print("Weather data clean saved to cleaned_data.csv")
+        summarize_data("cleaned_data.csv")
+
         
 
