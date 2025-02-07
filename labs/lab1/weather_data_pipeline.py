@@ -57,7 +57,9 @@ def clean_data(input_file, output_file):
                 else:
                     n+=1
         print(f"Skipping {n} rows due to invalid values.")
-        print("Cleaned data saved to", output_file)  
+        #print("Cleaned data saved to", output_file)  
+
+
             
 ### Part 4. Aggregation Operation 
 def summarize_data(filename):
@@ -99,8 +101,8 @@ if __name__ == "__main__":
     weather_data = fetch_weather_data()
     if weather_data:
         save_to_csv(weather_data, "weather_data.csv")
-        #print("Weather Data saved to weather_data.csv")
+        print("Weather Data saved to weather_data.csv")
         clean_data("weather_data.csv", "cleaned_data.csv")
-        #print("Cleaned Data saved to cleaned_data.csv")
+        print("Cleaned Data saved to cleaned_data.csv")
         summarize_data("cleaned_data.csv")
         
