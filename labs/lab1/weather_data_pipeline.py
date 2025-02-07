@@ -1,9 +1,5 @@
-from logging import exception
-
 import requests
 import csv
-
-from sympy.physics.units import temperature
 
 URL = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&past_days=10&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
 
@@ -65,7 +61,6 @@ def clean_data(input_file, output_file):
                     humidity = float(row['relative_humidity_2m']) if row['relative_humidity_2m'] else None
                     wind_speed = row['wind_speed_10m']
 
-                    # Example cleaning rules (ADAPT THESE AFTER INSPECTING weather_data.csv):
                     if temp is not None and 0 <= temp <= 60 and humidity is not None and 0 <= humidity <= 100 and wind_speed != "N/A" and wind_speed != "" and 3 <= float(
                             wind_speed) <= 150:
                         cleaned_data.append(row)
@@ -88,7 +83,7 @@ def clean_data(input_file, output_file):
                     writer = csv.DictWriter(outfile, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(cleaned_data)
-        except Exception as e:  # Handle any error during the file writing.
+        except Exception as e:
             print(f"An error occurred while writing to the output file: {e}")
             return False
 
@@ -96,8 +91,6 @@ def clean_data(input_file, output_file):
     except FileNotFoundError:
         print(f"Input file '{input_file}' not found.")
         return False
-
-
 
 
     ### TODO: complete rest of the code
@@ -110,20 +103,17 @@ def summarize_data(filename):
     """Summarizes weather data including averages and extremes."""
     with open(filename, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
-        headers = next(reader)  # Read header row
-        data = list(reader)  # Convert CSV data to list
+        headers = next(reader)
+        data = list(reader)
 
-        # Ensure we have data
         if not data:
             print("No data available to summarize.")
             return
 
-        # Extract values from columns
         temperatures = [float(row[1]) for row in data if row[1]]
         humidity_values = [float(row[2]) for row in data if row[2]]
         wind_speeds = [float(row[3]) for row in data if row[3]]
 
-        # Compute statistics
         ### TODO: complete rest of the code by computing the below mentioned metrics
         total_records = len(data)
         avg_temp = sum(temperatures) / total_records if temperatures else 0
