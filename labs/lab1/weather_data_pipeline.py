@@ -1,12 +1,13 @@
 import requests
 import csv
 
-URL = ""
+URL =  "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&past_days=10&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
 
 ### Part 1. Read Operation (Extract)
 def fetch_weather_data():
     """Fetches weather data for the past 10 days."""
     response = requests.get(URL)
+    return response.json()
 
     ## TODO: complete the code, the output should be data in json format
 
@@ -14,11 +15,23 @@ def fetch_weather_data():
 ### Part 2. Write Operation (Load)
 def save_to_csv(data, filename):
     """Saves weather data to a CSV file."""
-    with open(filename, "<ENTER MODE HERE>", newline='', encoding='utf-8') as file:
+    print(data["hourly"].keys())
+    headers = list(data["hourly"].keys())
+    
+    with open(filename, "w", newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+
+        for i in range(len(data["hourly"]["time"])):
+            writer.writerow([data["hourly"]["time"][i],data["hourly"]["temperature_2m"][i],
+                             data["hourly"]["relative_humidity_2m"][i],
+                             data["hourly"]["wind_speed_10m"][i]] )
+        return None
+    
 
         ### TODO: complete rest of the code, HINT: write the header row and body separately
 
-        return None
+        # return None
 
 ### Part 3. Cleaning Operation (Transform)
 def clean_data(input_file, output_file):
@@ -27,6 +40,24 @@ def clean_data(input_file, output_file):
         2. Humidity should be between 0% and 80%
         3. Wind speed in a betweeen 3 and 150
     """
+
+    with open(input_file, mode = 'r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        headers = next(reader)
+        data = list(reader)
+        cleaned_data = []
+
+        for row in data:
+            time,temperature_2m,relative_humidity_2m,wind_speed_10m = row
+            if(0<=float(temperature_2m)<=60) and (0<=float(relative_humidity_2m)<=80) and (3<=float(wind_speed_10m)<=150):
+                cleaned_data.append(row)
+
+        with open(output_file, 'w', newline= '', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            writer.writerows(cleaned_data)
+
+            
 
     ### TODO: complete rest of the code
             
@@ -52,8 +83,14 @@ def summarize_data(filename):
 
         # Compute statistics
         ### TODO: complete rest of the code by computing the below mentioned metrics
+        total_records = len(data)
+        avg_temp = sum(temperatures)/len(temperatures)
+        max_temp = max(temperatures)
+        min_temp = min(temperatures)
+        avg_humidity = sum(humidity_values)/ len(humidity_values)
+        avg_wind_speed = sum(wind_speeds)/len(wind_speeds)
 
-        # Print summary
+        print("summary")
         print("📊 Weather Data Summary 📊")
         print(f"Total Records: {total_records}")
         print(f"🌡️ Average Temperature: {avg_temp:.2f}°C")
@@ -68,8 +105,8 @@ if __name__ == "__main__":
     if weather_data:
         save_to_csv(weather_data, "weather_data.csv")
         print("Weather data saved to weather_data.csv")
-        #clean_data("weather_data.csv", "cleaned_data.csv")
-        #print("Weather data clean saved to cleaned_data.csv")
-        #summarize_data("cleaned_data.csv")
+        clean_data("weather_data.csv", "cleaned_data.csv")
+        print("Weather data clean saved to cleaned_data.csv")
+        summarize_data("cleaned_data.csv")
         
 
