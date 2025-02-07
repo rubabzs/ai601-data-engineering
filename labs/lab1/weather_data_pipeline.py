@@ -58,6 +58,8 @@ def clean_data(input_file, output_file):
                     n+=1
         print(f"Skipping {n} rows due to invalid values.")
         #print("Cleaned data saved to", output_file)  
+
+
             
 ### Part 4. Aggregation Operation 
 def summarize_data(filename):
