@@ -1,4 +1,5 @@
 import requests
+import numpy as np
 import csv
 import pandas as pd
 
@@ -46,6 +47,23 @@ def clean_data(input_file, output_file):
     """
 
     ### TODO: complete rest of the code
+    data = []
+    with open(input_file, mode='r') as f:
+        csvFile = csv.reader(f)
+        for rows in csvFile:
+            #print(rows)
+            try:
+                if float(rows[1])<=60 and float(rows[1])>=0 and int(rows[2])>=0 and int(rows[2])<=80 and float(rows[3])>=3 and float(rows[3])<=150:
+                    data.append(rows)
+                    
+            except:
+                print("Skipping due to Mismatch")
+
+    with open(output_file, 'w', newline='') as f:
+        writer = csv.writer(f, delimiter=",")
+        writer.writerow(['DateTime', 'Temp', 'Humid', 'Wind Speed'])
+        writer.writerows(data)
+
             
     print("Cleaned data saved to", output_file)
 
@@ -69,7 +87,12 @@ def summarize_data(filename):
 
         # Compute statistics
         ### TODO: complete rest of the code by computing the below mentioned metrics
-
+        total_records = len(data)
+        avg_temp = np.average(temperatures)
+        max_temp = max(temperatures)
+        min_temp = min(temperatures)
+        avg_humidity = np.average(humidity_values)
+        avg_wind_speed = np.average(wind_speeds)
         # Print summary
         print("📊 Weather Data Summary 📊")
         print(f"Total Records: {total_records}")
@@ -84,9 +107,9 @@ if __name__ == "__main__":
     weather_data = fetch_weather_data()
     if weather_data:
         save_to_csv(weather_data, "weather_data.csv")
-        #print("Weather data saved to weather_data.csv")
-        #clean_data("weather_data.csv", "cleaned_data.csv")
-        #print("Weather data clean saved to cleaned_data.csv")
-        #summarize_data("cleaned_data.csv")
+        print("Weather data saved to weather_data.csv")
+        clean_data("weather_data.csv", "cleaned_data.csv")
+        print("Weather data clean saved to cleaned_data.csv")
+        summarize_data("cleaned_data.csv")
         
 
