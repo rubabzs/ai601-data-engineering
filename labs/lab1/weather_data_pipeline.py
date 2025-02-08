@@ -1,3 +1,4 @@
+import os
 import requests
 import csv
 
@@ -18,6 +19,7 @@ def fetch_weather_data():
 ### Part 2. Write Operation (Load)
 def save_to_csv(data, filename):
     """Saves weather data to a CSV file."""
+    # os.remove(filename)
     with open(filename, "w", newline="", encoding="utf-8") as file:
 
         ### TODO: complete rest of the code, HINT: write the header row and body separately
@@ -53,8 +55,34 @@ def clean_data(input_file, output_file):
     ### TODO: complete rest of the code
 
     print("Cleaned data saved to", output_file)
-    with open(input_file, "w", newline="", encoding="utf-8") as file:
-        pass
+    with open(input_file, "r", encoding="utf-8") as file:
+        with open(output_file, "w", newline="", encoding="utf-8") as cleaned_file:
+            reader = csv.reader(file)
+            writer = csv.writer(cleaned_file)
+            data = list(reader)
+            cleaned_data = []
+            for idx, line in enumerate(data):
+                if idx == 0:
+                    cleaned_data.append(line)
+                    continue
+                is_line_validated = True
+
+                # Temperature
+                if float(line[1]) < 0 or float(line[1]) > 60:
+                    is_line_validated = False
+                # Humidity
+                if float(line[2]) < 0 or float(line[2]) > 80:
+                    is_line_validated = False
+                # Wind Speed
+                if float(line[3]) < 3 or float(line[3]) > 150:
+                    is_line_validated = False
+
+                if is_line_validated:
+                    cleaned_data.append(line)
+
+            writer.writerows(cleaned_data)
+            file.close()
+            cleaned_file.close()
 
 
 ### Part 4. Aggregation Operation
@@ -78,6 +106,13 @@ def summarize_data(filename):
         # Compute statistics
         ### TODO: complete rest of the code by computing the below mentioned metrics
 
+        total_records = len(data)
+        avg_temp = sum(temperatures) / total_records
+        max_temp = max(temperatures)
+        min_temp = min(temperatures)
+        avg_humidity = sum(humidity_values) / total_records
+        avg_wind_speed = sum(wind_speeds) / total_records
+
         # Print summary
         print("📊 Weather Data Summary 📊")
         print(f"Total Records: {total_records}")
@@ -93,6 +128,6 @@ if __name__ == "__main__":
     if weather_data:
         save_to_csv(weather_data, "weather_data.csv")
         print("Weather data saved to weather_data.csv")
-        # clean_data("weather_data.csv", "cleaned_data.csv")
-        # print("Weather data clean saved to cleaned_data.csv")
-        # summarize_data("cleaned_data.csv")
+        clean_data("weather_data.csv", "cleaned_data.csv")
+        print("Weather data clean saved to cleaned_data.csv")
+        summarize_data("cleaned_data.csv")
