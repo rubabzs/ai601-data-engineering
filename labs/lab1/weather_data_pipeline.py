@@ -96,9 +96,9 @@ def summarize_data(filename):
 if __name__ == "__main__":
     weather_data = fetch_weather_data()
     if weather_data:
-        save_to_csv(weather_data, "weather_data.csv")
+        save_to_csv(weather_data, "./labs/lab1/weather_data.csv")
         print("📝 Weather data saved to weather_data.csv")
-        clean_data("weather_data.csv", "cleaned_data.csv")
+        clean_data("./labs/lab1/weather_data.csv", "./labs/lab1/cleaned_data.csv")
         print("🧹 Weather data cleaned and saved to cleaned_data.csv")
-        summarize_data("cleaned_data.csv")
+        summarize_data("./labs/lab1/cleaned_data.csv")
         print("\n\n✨ Weather data summarized successfully!")
