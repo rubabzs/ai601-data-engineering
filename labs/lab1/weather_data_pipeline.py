@@ -100,7 +100,6 @@ def summarize_data(filename):
         )
         avg_wind_speed = sum(wind_speeds) / len(wind_speeds) if wind_speeds else 0
 
-
         # Print summary
         print("📊 Weather Data Summary 📊")
         print(f"Total Records: {total_records}")
