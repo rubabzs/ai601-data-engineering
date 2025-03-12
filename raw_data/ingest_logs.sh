@@ -16,8 +16,8 @@ echo "Month: $MONTH"
 echo "Day: $DAY"
 
 # Define local logs directory
-LOGS_DIR="logs_backup/logs_backup/$DATE"
-NO_DATE_DIR="logs_backup/logs_backup"
+LOGS_DIR="logs_backup/$DATE"
+NO_DATE_DIR="logs_backup"
 
 # Check if local directory exists
 if [ ! -d "$LOGS_DIR" ]; then
