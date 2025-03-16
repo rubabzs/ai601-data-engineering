@@ -39,10 +39,25 @@ events_df = parsed_df.select("data.*")
 # Convert timestamp double -> actual timestamp if we want event time
 # But for simplicity, let's do a processing-time approach
 # If you want event-time windows, do:
-# events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
+events_df = events_df.withColumn("event_time", col("timestamp").cast(TimestampType()))
+events_df = events_df.withWatermark("event_time", "5 minutes")
 
 # 4) Filter only "play" events
 plays_df = events_df.filter(col("action") == "play")
+
+# Calculate skip ratio
+skip_counts = events_df.filter(col("action") == "skip") \
+    .groupBy("song_id", "region") \
+    .count() \
+    .withColumnRenamed("count", "skip_count")
+
+play_counts = plays_df \
+    .groupBy("song_id", "region") \
+    .count() \
+    .withColumnRenamed("count", "play_count")
+
+skip_ratio_df = play_counts.join(skip_counts, on=["song_id", "region"], how="left") \
+    .withColumn("skip_ratio", col("skip_count") / (col("play_count") + col("skip_count")))
 
 # 5) Group by region + 5-minute processing time window
 # We'll do a simple processing-time window using current_timestamp
@@ -51,7 +66,7 @@ from pyspark.sql.functions import current_timestamp
 
 windowed_df = plays_df \
     .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
+        window("event_time", "2 minutes"),  # processing-time window
         col("region"),
         col("song_id")
     ) \
@@ -77,11 +92,22 @@ def process_batch(batch_df, batch_id):
     print(f"=== Batch: {batch_id} ===")
     ranked_df.show(truncate=False)
 
+    kafka_output = ranked_df.selectExpr(
+        "CAST(window AS STRING) AS key",
+        "to_json(struct(*)) AS value"
+    )
+    kafka_output.write \
+        .format("kafka") \
+        .option("kafka.bootstrap.servers", "localhost:9092") \
+        .option("topic", "now_trending_results") \
+        .save()
+
 # 7) Write Stream with foreachBatch
 query = windowed_df \
     .writeStream \
     .outputMode("update") \
     .foreachBatch(process_batch) \
+    .trigger(processingTime='20 seconds') \
     .start()
 
 query.awaitTermination()
