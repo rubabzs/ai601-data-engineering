@@ -42,16 +42,16 @@ events_df = parsed_df.select("data.*")
 # events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
 
 # 4) Filter only "play" events
-plays_df = events_df.filter(col("action") == "play")
+# No need to filter we need all kind of events.
 
 # 5) Group by region + 5-minute processing time window
 # We'll do a simple processing-time window using current_timestamp
 # Alternatively, you can do event-time with a column if you convert 'timestamp' to a Spark timestamp
 from pyspark.sql.functions import current_timestamp
 
-windowed_df = plays_df \
+windowed_df = events_df \
     .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
+        window(current_timestamp(), "1 minutes"),  # processing-time window
         col("region"),
         col("song_id")
     ) \
@@ -80,6 +80,7 @@ def process_batch(batch_df, batch_id):
 # 7) Write Stream with foreachBatch
 query = windowed_df \
     .writeStream \
+    .trigger(processingTime='5 seconds') \
     .outputMode("update") \
     .foreachBatch(process_batch) \
     .start()
