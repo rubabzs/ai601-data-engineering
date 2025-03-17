@@ -51,7 +51,7 @@ from pyspark.sql.functions import current_timestamp
 
 windowed_df = plays_df \
     .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
+        window(current_timestamp(), "1 minute"),  # processing-time window
         col("region"),
         col("song_id")
     ) \
@@ -82,6 +82,7 @@ query = windowed_df \
     .writeStream \
     .outputMode("update") \
     .foreachBatch(process_batch) \
+    .trigger(processingTime='5 seconds') \
     .start()
 
 query.awaitTermination()
