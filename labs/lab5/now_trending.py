@@ -7,6 +7,9 @@ from pyspark.sql.types import StructType, StructField, StringType, DoubleType
 from pyspark.sql.types import TimestampType
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number
+import time
+import random
+import json
 
 # 1) Create SparkSession
 spark = SparkSession.builder \
@@ -51,7 +54,7 @@ from pyspark.sql.functions import current_timestamp
 
 windowed_df = plays_df \
     .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
+        window(current_timestamp(), "1 minutes"),  # processing-time window
         col("region"),
         col("song_id")
     ) \
@@ -85,3 +88,21 @@ query = windowed_df \
     .start()
 
 query.awaitTermination()
+
+# Add Skip to the end of the file
+# Skip
+
+
+producer = KafkaProducer(bootstrap_servers='localhost:9092', value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+while True:
+    event = {
+        "song_id": str(random.randint(101, 505)),
+        "timestamp": time.time(),
+        "region": random.choice(["US", "EU", "APAC"]),
+        "action": "play"
+    }
+    producer.send('music_events', event)
+    print(f"Sent event: {event}")
+    time.sleep(random.uniform(1, 2))
+
+
