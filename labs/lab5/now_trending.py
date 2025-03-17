@@ -1,5 +1,6 @@
 # now_trending.py
 
+from pyspark.sql.functions import current_timestamp
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, window, from_json
 from pyspark.sql.functions import desc
@@ -40,24 +41,26 @@ events_df = parsed_df.select("data.*")
 # But for simplicity, let's do a processing-time approach
 # If you want event-time windows, do:
 # events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
-
+events_df = events_df.withColumn(
+    "event_time", (col("timestamp") / 1000).cast(TimestampType()))
+events_df = events_df.withWatermark("event_time", "5 minutes")
 # 4) Filter only "play" events
-plays_df = events_df.filter(col("action") == "play")
+plays_df = events_df.filter(col("action") == "like")
 
 # 5) Group by region + 5-minute processing time window
 # We'll do a simple processing-time window using current_timestamp
 # Alternatively, you can do event-time with a column if you convert 'timestamp' to a Spark timestamp
-from pyspark.sql.functions import current_timestamp
 
-windowed_df = plays_df \
-    .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
-        col("region"),
-        col("song_id")
-    ) \
-    .count()
+windowed_df = plays_df.groupBy(
+    window(col("event_time"), "1 minutes"),
+    col("region"),
+    col("song_id")
+).count()
+
 
 # 6) Use foreachBatch to do rank-based top N logic each micro-batch
+
+
 def process_batch(batch_df, batch_id):
     """
     This function is called for each micro-batch. We treat 'batch_df' as a normal batch DataFrame.
@@ -77,10 +80,12 @@ def process_batch(batch_df, batch_id):
     print(f"=== Batch: {batch_id} ===")
     ranked_df.show(truncate=False)
 
+
 # 7) Write Stream with foreachBatch
 query = windowed_df \
     .writeStream \
     .outputMode("update") \
+    .trigger(processingTime="5 seconds") \
     .foreachBatch(process_batch) \
     .start()
 
