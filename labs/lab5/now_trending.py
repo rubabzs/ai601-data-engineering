@@ -1,7 +1,7 @@
 # now_trending.py
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, window, from_json
+from pyspark.sql.functions import col, window, from_json, count, when
 from pyspark.sql.functions import desc
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType
 from pyspark.sql.types import TimestampType
@@ -39,10 +39,10 @@ events_df = parsed_df.select("data.*")
 # Convert timestamp double -> actual timestamp if we want event time
 # But for simplicity, let's do a processing-time approach
 # If you want event-time windows, do:
-# events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
+events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
 
 # 4) Filter only "play" events
-plays_df = events_df.filter(col("action") == "play")
+plays_df = events_df.filter((col("action") == "play") | (col("action") == "skip") | (col("action") == "like"))
 
 # 5) Group by region + 5-minute processing time window
 # We'll do a simple processing-time window using current_timestamp
@@ -51,7 +51,7 @@ from pyspark.sql.functions import current_timestamp
 
 windowed_df = plays_df \
     .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
+        window(current_timestamp(), "1 minutes"),  # processing-time window
         col("region"),
         col("song_id")
     ) \
@@ -82,6 +82,7 @@ query = windowed_df \
     .writeStream \
     .outputMode("update") \
     .foreachBatch(process_batch) \
+    .trigger(processingTime="1 seconds") \
     .start()
 
 query.awaitTermination()
