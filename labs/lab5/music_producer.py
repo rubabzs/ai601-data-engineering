@@ -14,14 +14,16 @@ producer = KafkaProducer(
 
 songs = [101, 202, 303, 404, 505]   # sample song IDs
 regions = ["US", "EU", "APAC"]
+actions = ["play", "skip", "like"]  # Actions: play, skip, like
 
 while True:
     event = {
         "song_id": random.choice(songs),
         "timestamp": time.time(),
         "region": random.choice(regions),
-        "action": "play"  # or skip, etc.
+        "action": random.choice(actions)  # Randomly pick an action (play, skip, like)
     }
     producer.send(TOPIC, event)
     print(f"Sent event: {event}")
     time.sleep(random.uniform(0.5, 2.0))  # random interval
+
