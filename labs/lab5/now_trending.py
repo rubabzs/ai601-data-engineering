@@ -39,7 +39,7 @@ events_df = parsed_df.select("data.*")
 # Convert timestamp double -> actual timestamp if we want event time
 # But for simplicity, let's do a processing-time approach
 # If you want event-time windows, do:
-# events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
+events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
 
 # 4) Filter only "play" events
 plays_df = events_df.filter(col("action") == "play")
@@ -51,7 +51,7 @@ from pyspark.sql.functions import current_timestamp
 
 windowed_df = plays_df \
     .groupBy(
-        window(current_timestamp(), "5 minutes"),  # processing-time window
+        window(current_timestamp(), "1 minutes"),  # processing-time window
         col("region"),
         col("song_id")
     ) \
@@ -80,6 +80,7 @@ def process_batch(batch_df, batch_id):
 # 7) Write Stream with foreachBatch
 query = windowed_df \
     .writeStream \
+    .trigger(processingTime="5 second") \
     .outputMode("update") \
     .foreachBatch(process_batch) \
     .start()
