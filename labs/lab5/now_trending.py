@@ -1,3 +1,4 @@
+
 # now_trending.py
 
 from pyspark.sql import SparkSession
@@ -7,6 +8,11 @@ from pyspark.sql.types import StructType, StructField, StringType, DoubleType
 from pyspark.sql.types import TimestampType
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number
+import os
+os.environ["HADOOP_HOME"] = "C:\\Users\\HP\\miniconda3\\envs\\lab5"
+os.environ["JAVA_HOME"] = "C:\\Users\\HP\\miniconda3\\envs\\lab5\\Library"
+os.environ["SPARK_SUBMIT_OPTS"] = "-Djava.security.policy=spark.policy"
+
 
 # 1) Create SparkSession
 spark = SparkSession.builder \
@@ -39,7 +45,7 @@ events_df = parsed_df.select("data.*")
 # Convert timestamp double -> actual timestamp if we want event time
 # But for simplicity, let's do a processing-time approach
 # If you want event-time windows, do:
-# events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
+events_df = events_df.withColumn("event_time", (col("timestamp") * 1000).cast(TimestampType()))
 
 # 4) Filter only "play" events
 plays_df = events_df.filter(col("action") == "play")
@@ -50,6 +56,7 @@ plays_df = events_df.filter(col("action") == "play")
 from pyspark.sql.functions import current_timestamp
 
 windowed_df = plays_df \
+    .withWatermark("event_time", "5 minutes") \
     .groupBy(
         window(current_timestamp(), "5 minutes"),  # processing-time window
         col("region"),
@@ -72,6 +79,10 @@ def process_batch(batch_df, batch_id):
 
     ranked_df = batch_df.withColumn("rn", row_number().over(w)) \
                         .filter(col("rn") <= 3)
+    
+    top_songs = ranked_df.toJSON().collect()
+    for song in top_songs:
+        producer.send("now_trending_results", song)
 
     # Show the top songs for each region + 5-min window
     print(f"=== Batch: {batch_id} ===")
@@ -82,6 +93,7 @@ query = windowed_df \
     .writeStream \
     .outputMode("update") \
     .foreachBatch(process_batch) \
+    .trigger(processingTime="5 seconds") \
     .start()
 
 query.awaitTermination()
