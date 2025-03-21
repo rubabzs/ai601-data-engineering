@@ -16,11 +16,13 @@ songs = [101, 202, 303, 404, 505]   # sample song IDs
 regions = ["US", "EU", "APAC"]
 
 while True:
+    actions = ["play", "skip", "like"]
+    action = random.choice(actions)
     event = {
         "song_id": random.choice(songs),
         "timestamp": time.time(),
         "region": random.choice(regions),
-        "action": "play"  # or skip, etc.
+        "action": action  # or skip, etc.
     }
     producer.send(TOPIC, event)
     print(f"Sent event: {event}")
