@@ -1,16 +1,19 @@
 import pandas as pd
+from prefect import task, flow, get_run_logger
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
 import joblib
 
+@task
 def fetch_data(dataset_path: str) -> pd.DataFrame:
     print(f"Reading data from {dataset_path}")
     df = pd.read_csv(dataset_path)
     print(f"Data shape: {df.shape}")
     return df
 
+@task
 def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     print("Validating data")
     missing_values = df.isnull().sum()
@@ -19,6 +22,7 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     df.fillna(df.median(numeric_only=True), inplace=True)
     return df
 
+@task
 def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     print("Transforming data")
     # Assume the last column is the target variable.
@@ -31,6 +35,7 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     df_transformed["target"] = target.values
     return df_transformed
 
+@task(retries=5)
 def train_model(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42):
     print("Training model")
     X = df.drop("target", axis=1)
@@ -41,6 +46,7 @@ def train_model(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42
     print("Model training complete")
     return model, X_test, y_test
 
+@task
 def evaluate_model(model, X_test, y_test) -> float:
     print("Evaluating model")
     predictions = model.predict(X_test)
@@ -48,6 +54,7 @@ def evaluate_model(model, X_test, y_test) -> float:
     print(f"Model accuracy: {acc}")
     return acc
 
+@task
 def save_model(model, accuracy: float, threshold: float, model_path: str = "model.joblib"):
     if accuracy >= threshold:
         print(f"Accuracy {accuracy} meets threshold {threshold}. Saving model to {model_path}")
@@ -55,10 +62,11 @@ def save_model(model, accuracy: float, threshold: float, model_path: str = "mode
     else:
         print(f"Accuracy {accuracy} below threshold {threshold}. Model not saved.")
 
-def main():
-    dataset_path = "data/iris.csv"
-    accuracy_threshold = 0.9
-    test_size = 0.2
+@flow
+def main(m_dataset_path: str, m_accuracy_threshold: float, m_test_size: float):
+    dataset_path = m_dataset_path
+    accuracy_threshold = m_accuracy_threshold
+    test_size = m_test_size
 
     print("Starting ML Pipeline")
     df = fetch_data(dataset_path)
@@ -70,4 +78,4 @@ def main():
     print("ML Pipeline completed")
 
 if __name__ == "__main__":
-    main()
+    main(m_dataset_path="data/iris.csv", m_accuracy_threshold=0.9, m_test_size=0.2)
