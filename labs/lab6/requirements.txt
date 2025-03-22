@@ -1,0 +1,6 @@
+prefect==3.2.9
+pandas
+scikit-learn
+joblib
+python-dotenv
+matplotlib
