@@ -4,14 +4,18 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
 import joblib
+from prefect import task, flow, get_run_logger
 
-def fetch_data(dataset_path: str) -> pd.DataFrame:
+
+@task(name = 'Read Data')
+def read_data(dataset_path: str):    
     print(f"Reading data from {dataset_path}")
     df = pd.read_csv(dataset_path)
     print(f"Data shape: {df.shape}")
     return df
 
-def validate_data(df: pd.DataFrame) -> pd.DataFrame:
+@task(name = 'Validate Data')
+def validate_data(df):
     print("Validating data")
     missing_values = df.isnull().sum()
     print("Missing values:\n", missing_values)
@@ -19,7 +23,8 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     df.fillna(df.median(numeric_only=True), inplace=True)
     return df
 
-def transform_data(df: pd.DataFrame) -> pd.DataFrame:
+@task(name = 'Transform Data')
+def transform_data(df):
     print("Transforming data")
     # Assume the last column is the target variable.
     features = df.iloc[:, :-1]
@@ -31,7 +36,8 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     df_transformed["target"] = target.values
     return df_transformed
 
-def train_model(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42):
+@task(name="Train Model", retries=3, retry_delay_seconds=10)
+def train_model(df, test_size: float = 0.2, random_state: int = 42):
     print("Training model")
     X = df.drop("target", axis=1)
     y = df["target"]
@@ -41,13 +47,15 @@ def train_model(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42
     print("Model training complete")
     return model, X_test, y_test
 
-def evaluate_model(model, X_test, y_test) -> float:
+@task(name = 'Evaluate Model')
+def evaluate_model(model, X_test, y_test):
     print("Evaluating model")
     predictions = model.predict(X_test)
     acc = accuracy_score(y_test, predictions)
     print(f"Model accuracy: {acc}")
     return acc
 
+@task(name = 'Save Model')
 def save_model(model, accuracy: float, threshold: float, model_path: str = "model.joblib"):
     if accuracy >= threshold:
         print(f"Accuracy {accuracy} meets threshold {threshold}. Saving model to {model_path}")
@@ -55,19 +63,23 @@ def save_model(model, accuracy: float, threshold: float, model_path: str = "mode
     else:
         print(f"Accuracy {accuracy} below threshold {threshold}. Model not saved.")
 
-def main():
-    dataset_path = "data/iris.csv"
+@task(name = 'Complete')
+def complete():
+    print("ML pipeline completed.")
+
+@flow(name = 'ml_pipeline')
+def ml_pipeline():
+    dataset_path = "/home/hadoop/AI601_lab6/lab6/Iris.csv"
     accuracy_threshold = 0.9
     test_size = 0.2
 
-    print("Starting ML Pipeline")
-    df = fetch_data(dataset_path)
+    df = read_data(dataset_path)
     df_validated = validate_data(df)
     df_transformed = transform_data(df_validated)
     model, X_test, y_test = train_model(df_transformed, test_size=test_size)
     accuracy = evaluate_model(model, X_test, y_test)
     save_model(model, accuracy, accuracy_threshold)
-    print("ML Pipeline completed")
+    complete()
 
 if __name__ == "__main__":
-    main()
+    ml_pipeline()

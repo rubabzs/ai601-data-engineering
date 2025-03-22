@@ -6,10 +6,6 @@ deployments:
   version: "1.0"
   description: "End-to-end ML pipeline orchestrated with Prefect 3.2.14"
   entrypoint: ml_pipeline.py:ml_pipeline
-  parameters:
-    dataset_path: "iris.csv"
-    accuracy_threshold: 0.9
-    test_size: 0.2
   schedules:
     - cron: "0 9 * * *"  # Schedule: Every day at 9 AM local time
   work_pool:
