@@ -1,43 +1,59 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from prefect import task, flow, get_run_logger
 
-def main():
-    # Step 1: Fetch Data
-    print("Reading data...")
-    # Assume a dataset with sales figures and other fields is provided.
-    df = pd.read_csv("data/analytics_data.csv")
-    print(f"Data shape: {df.shape}")
+@task
+def fetch_data():
+    logger = get_run_logger()
+    logger.info("Reading data...")
+    df = pd.read_csv("analytics_data.csv")
+    logger.info(f"Data shape: {df.shape}")
+    return df
 
-    # Step 2: Validate Data
-    print("Validating data...")
+@task
+def validate_data(df: pd.DataFrame):
+    logger = get_run_logger()
+    logger.info("Validating data...")
     missing_values = df.isnull().sum()
-    print("Missing values:\n", missing_values)
-    # For simplicity, drop any rows with missing values
+    logger.info(f"Missing values:\n{missing_values}")
     df_clean = df.dropna()
+    return df_clean
 
-    # Step 3: Transform Data
-    print("Transforming data...")
-    # For example, if there is a "sales" column, create a normalized version.
-    if "sales" in df_clean.columns:
-        df_clean["sales_normalized"] = (df_clean["sales"] - df_clean["sales"].mean()) / df_clean["sales"].std()
+@task
+def transform_data(df: pd.DataFrame):
+    logger = get_run_logger()
+    logger.info("Transforming data...")
+    if "sales" in df.columns:
+        df["sales_normalized"] = (df["sales"] - df["sales"].mean()) / df["sales"].std()
+    return df
 
-    # Step 4: Generate Analytics Report
-    print("Generating analytics report...")
-    summary = df_clean.describe()
-    summary.to_csv("data/analytics_summary.csv")
-    print("Summary statistics saved to data/analytics_summary.csv")
+@task
+def generate_report(df: pd.DataFrame):
+    logger = get_run_logger()
+    logger.info("Generating analytics report...")
+    summary = df.describe()
+    summary.to_csv("analytics_summary.csv")
+    logger.info("Summary statistics saved to analytics_summary.csv")
 
-    # Step 5: Create a Histogram for Sales Distribution
-    if "sales" in df_clean.columns:
-        plt.hist(df_clean["sales"], bins=20)
+@task
+def create_sales_histogram(df: pd.DataFrame):
+    logger = get_run_logger()
+    if "sales" in df.columns:
+        plt.hist(df["sales"], bins=20)
         plt.title("Sales Distribution")
         plt.xlabel("Sales")
         plt.ylabel("Frequency")
-        plt.savefig("data/sales_histogram.png")
+        plt.savefig("sales_histogram.png")
         plt.close()
-        print("Sales histogram saved to data/sales_histogram.png")
+        logger.info("Sales histogram saved to sales_histogram.png")
 
-    print("Analytics pipeline completed.")
-
+@flow
+def analytics_pipeline():
+    df = fetch_data()
+    df_clean = validate_data(df)
+    df_transformed = transform_data(df_clean)
+    generate_report(df_transformed)
+    create_sales_histogram(df_transformed)
+    
 if __name__ == "__main__":
-    main()
+    analytics_pipeline()
